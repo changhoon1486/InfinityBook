@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.book.mypage.dao.TrackerDAO">
+
+	<select id="bookInfoChk" resultType="int">
+		SELECT COUNT(isbn) FROM book WHERE isbn = #{param1}
+	</select>
+	
+	<insert id="saveBook" parameterType="TrackerDTO">
+		INSERT INTO book(isbn,title,cover,author,publisher,description,pubdate,totalPage,reg_member_idx,reg_screen)
+			VALUES(#{isbn},#{title},#{cover},#{author},#{publisher},#{description},#{pubdate},#{totalPage},#{loginIdx},#{jsp})
+	</insert>
+
+	 <insert id="saveTracker" parameterType="HashMap">
+		INSERT INTO tracker(member_idx,isbn,tracker_readpage,tracker_startdate,tracker_enddate,reg_member_idx,reg_screen)
+			VALUES(#{loginIdx},#{isbn},			
+				<choose>
+		            <when test="state.equals('read')">
+		                (SELECT totalPage FROM book WHERE isbn = #{isbn})
+		            </when>
+		            <otherwise>
+		                #{readPage}
+		            </otherwise>
+		        </choose>
+			,#{startDate},#{endDate},#{loginIdx},#{jsp})
+	</insert>
+	
+	<select id="getTotalPage" resultType="int">
+		SELECT totalPage FROM book WHERE isbn = #{param}
+	</select>
+	
+	<select id="getTrackerList" resultType="hashMap">
+		SELECT
+		    (t.tracker_idx) AS trackerIdx,
+		    (t.isbn) AS isbn,
+		    (SELECT title FROM book b WHERE b.isbn = t.isbn) AS title,
+		    (SELECT author FROM book b WHERE b.isbn = t.isbn) AS author,
+		    (SELECT cover FROM book b WHERE b.isbn = t.isbn) AS cover,
+		    (t.tracker_startDate) AS startDate,
+		    (t.tracker_endDate) AS endDate,
+		    FLOOR((t.TRACKER_READPAGE / b.totalPage) * 100) AS progress,
+		    (t.TRACKER_READPAGE) AS readPage,
+		    (SELECT totalPage FROM book b WHERE b.isbn = t.isbn) AS totalPage
+		FROM
+		    tracker t
+		LEFT JOIN
+		    book b ON t.isbn = b.isbn
+		WHERE
+		    t.MEMBER_IDX = #{param}
+	    ORDER BY t.TRACKER_READPAGE ASC
+	</select>
+	
+	<select id="trackerDetail" resultType="hashmap">
+		SELECT 
+			t.tracker_idx,
+			t.isbn,
+		    (SELECT title FROM book b WHERE b.isbn = t.isbn) AS title,
+		    (SELECT author FROM book b WHERE b.isbn = t.isbn) AS author,
+		    (SELECT cover FROM book b WHERE b.isbn = t.isbn) AS cover,
+		    (t.tracker_startDate) AS startDate,
+		    (t.tracker_endDate) AS endDate,
+		    FLOOR((t.TRACKER_READPAGE / b.totalPage) * 100) AS progress,
+		    (t.TRACKER_READPAGE) AS readPage,
+		    (SELECT totalPage FROM book b WHERE b.isbn = t.isbn) AS totalPage
+		FROM
+		    tracker t
+		LEFT JOIN
+		    book b ON t.isbn = b.isbn
+		WHERE t.tracker_idx = #{param1}
+	</select>
+	
+	<update id="trackerUpdateBook">
+		UPDATE tracker SET 
+			tracker_startdate = #{startDate},			
+			tracker_readpage = #{readPage},
+			mod_member_idx = #{loginIdx},
+			mod_date = NOW(),	
+			mod_screen  = #{jsp}
+		WHERE member_idx = #{loginIdx}
+			AND isbn = #{isbn}		
+	</update>
+	
+	<update id="saveEndDate">
+		UPDATE tracker SET 
+			tracker_enddate = NOW()
+		WHERE member_idx = #{param1}
+			AND isbn = #{param2}	
+	</update>
+	
+	<delete id="trackerDeleteBook">
+		DELETE FROM tracker WHERE isbn = #{param1} AND member_idx = #{param2}
+	</delete>
+	
+	<insert id="trackerAddMemo" parameterType="HashMap">
+		INSERT INTO memo(member_idx,tracker_idx,memo_content,reg_member_idx,reg_screen) 
+			VALUES(#{loginIdx},#{trackerIdx},#{content},#{loginIdx},#{jsp})
+	</insert>
+
+	<select id="getMemoList" resultType="HashMap">
+		SELECT 
+			memo_idx,
+			tracker_idx,
+			(memo_content) AS content, 
+			DATE_FORMAT(memo_regdate, '%Y-%m-%d %H:%i') AS regDate
+		FROM memo
+			WHERE tracker_idx = #{param}
+			ORDER BY memo_regdate DESC
+	</select>
+	
+	<delete id="memoDelete" parameterType="hashMap">
+			DELETE FROM memo WHERE tracker_idx = #{trackerIdx} AND memo_idx = ${memoIdx}
+	</delete>
+
+	<select id="getContent" resultType="string">
+		SELECT memo_content FROM memo WHERE tracker_idx = #{trackerIdx} AND memo_idx = ${memoIdx}
+	</select>
+
+	<update id="memoUpdate" parameterType="hashMap">
+		UPDATE memo SET 
+			memo_content = #{content},	
+			mod_date = NOW(),	
+			mod_screen  = #{jsp},
+			mod_member_idx = #{loginIdx}
+		WHERE tracker_idx = #{trackerIdx}
+			AND memo_idx = #{memoIdx}	
+	</update>
+
+
+
+
+
+
+</mapper>

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.book.bookReport.dao.BookReportDAO">
+
+	<select id="bookInfoChk" resultType="int">
+		SELECT COUNT(isbn) FROM book WHERE isbn = #{param1}
+	</select>
+	
+	<insert id="saveBook" parameterType="BookReportDTO">
+		INSERT INTO book(isbn,title,cover,author,publisher,description,pubdate,totalPage,reg_member_idx,reg_screen)
+			VALUES(#{isbn},#{title},#{cover},#{author},#{publisher},#{description},#{pubdate},#{totalPage},#{loginIdx},#{jsp})
+	</insert>
+
+	<insert
+		useGeneratedKeys="true"
+		keyColumn="book_report_idx"
+		keyProperty="book_report_idx"
+		id="bookReportWrite" parameterType="HashMap">
+					INSERT INTO book_report (member_idx, ISBN, BOOK_REPORT_TITLE, BOOK_REPORT_CONTENT, BOOK_REPORT_DATE, BOOK_REPORT_HIT, BOOK_REPORT_BLIND, BOOK_REPORT_OPEN) 
+			VALUES(#{member_idx},#{isbn}, #{reportTitle}, #{content}, current_timestamp(), 0, 0,#{reportOpen})
+	</insert>
+	
+	<select id="reportDetail" resultType="BookReportDTO">
+		select * from book_report where book_report_idx = #{book_report_idx}
+	</select>
+	
+	<select id="getBookInfo" resultType="HashMap">
+		select * from book where isbn = #{isbn}
+	</select>
+
+	<select id="bookReportList" resultType="BookReportDTO">
+		select br.book_report_idx
+		,br.member_idx
+		,br.isbn
+		,br.book_report_title
+		,br.book_report_content
+		,br.book_report_date
+		,br.book_report_open
+		,br.book_report_hit
+		,m.member_nickname 
+		,b.title 
+		,b.cover 
+		,b.author 
+		from book_report br inner join member m on br.member_idx = m.member_idx inner join book b on br.isbn = b.isbn  where book_report_open = 1 order by br.book_report_idx desc;
+	</select>
+
+	<select id="getLike" resultType="String">
+		select COALESCE(sum(like_state),0)  from `like` where book_report_idx = #{book_report_idx};
+	</select>
+	
+	<select id="myLike" resultType="String">
+		select COALESCE(sum(like_state),0)  from `like` where book_report_idx = #{book_report_idx} and member_idx = #{member_idx};
+	</select>
+	
+	<insert id="likeCheck" parameterType="HashMap">
+		insert into `like`(book_report_idx, member_idx, like_state, like_date)
+			 values(#{book_report_idx},#{member_idx},#{like_state},current_timestamp());
+	</insert>
+	
+		<select id="bookTotalReplyList" resultType="int">
+		SELECT COUNT( r.reply_idx)
+		FROM reply r
+		JOIN `member` m ON r.member_idx = m.member_idx 
+		JOIN code c ON c.code_idx = r.code_idx AND r.code_idx =61
+		WHERE idx =#{param1} AND reply_blind = 0
+	</select> 
+	
+	<select id="bookReplyList" resultType="BookReportDTO">
+		SELECT r.reply_idx, c.code_code,m.member_idx ,m.member_nickname, r.reply_content, r.idx , r.reg_date 
+		FROM reply r
+		JOIN `member` m ON r.member_idx = m.member_idx 
+		JOIN code c ON c.code_idx = r.code_idx 
+		WHERE idx =#{param1} AND reply_blind = 0 AND r.code_idx =61
+		ORDER BY r.reply_idx ASC LIMIT 10 OFFSET #{param2}
+	</select>
+	
+	<!-- void clubReplyWrite(String member_idx, String reply_content, String club_idx);
+	 -->
+	<insert id="bookReplyWrite">
+		INSERT INTO reply(member_idx,code_idx,idx, reply_blind, reply_content)
+		VALUES(#{param1}, 61, #{param3}, 0, #{param2});
+	</insert> 
+	
+	<update id="bookReplyDelete">
+		UPDATE reply SET reply_blind='1' WHERE reply_idx=#{param1}
+	</update>
+	
+	<update id="bookReplyUpdate">
+		UPDATE reply SET reply_content=#{param2} WHERE reply_idx=#{param1}
+	</update>
+	
+	<!-- void clubReReply(String member_idx, String reply_idx, String reply_content, String club_idx); -->
+	
+	<insert id="bookReReply">
+		INSERT INTO reply(member_idx,code_idx,idx, reply_blind, reply_content)
+		VALUES(#{param1}, 62, #{param2}, 0, #{param3});
+	</insert> 
+
+	<select id="bookReReplyList" resultType="BookReportDTO">
+		SELECT r.reply_idx, c.code_code,m.member_idx ,m.member_nickname, r.reply_content, r.idx , r.reg_date 
+		FROM reply r
+		JOIN `member` m ON r.member_idx = m.member_idx 
+		JOIN code c ON c.code_idx = r.code_idx 
+		WHERE idx =#{param1} AND reply_blind = 0 AND r.code_idx =62
+	</select>
+	
+	
+	<select id="bookReplyMember">
+		SELECT member_idx FROM reply r WHERE reply_idx = #{param1}
+	</select>
+	
+	<select id="bookTitle">
+		SELECT book_report_title
+		FROM book_report 
+		WHERE book_report_idx = #{param1}
+	</select>
+	
+	<insert id="bookReReplyAlarm">
+		INSERT INTO alarm(code_idx, idx, member_idx, alarm_content, alarm_check)
+		VALUES(75, #{param2}, #{param1}, #{param3}, 0);
+	</insert>
+	
+	<update id="hit">
+		update book_report set book_report_hit = book_report_hit + 1 where 
+book_report_idx = #{book_report_idx};
+	</update>
+	
+	<select id="getName">
+	select m.member_nickname from book_report br join member m on br.member_idx = m.member_idx where book_report_idx = #{book_report_idx}; 
+	</select>
+	
+		
+</mapper>

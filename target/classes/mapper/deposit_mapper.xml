@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.book.mypage.dao.DepositDAO">
+
+	<select id="totalListCnt" resultType="int">
+			SELECT COUNT(deposit_use_idx) FROM deposit_use WHERE member_idx=#{param1} ORDER BY deposit_use_date DESC
+	</select>
+	
+	
+	<select id="depositUseList" resultType="deposit">
+			SELECT deposit_use_idx, member_idx, deposit_use_price, deposit_use_state, deposit_use_date, rent_idx FROM deposit_use 
+			WHERE member_idx=#{param1} ORDER BY deposit_use_date DESC LIMIT 9 OFFSET #{param2}
+	</select>
+
+	<select id="depositNow" resultType="int">
+		SELECT COALESCE(SUM(deposit_use_price), 0) FROM deposit_use WHERE member_idx=#{param1}
+	</select>
+	
+	<select id="getPw">
+		SELECT member_pw FROM member WHERE member_idx=#{param1}
+	</select>
+	
+	<select id="bankList" resultType="hashmap">
+		SELECT code_idx, code_code, code_codename  FROM code WHERE code_upcode='bank';
+	</select>
+	
+	<!-- depositWithdrawReq(HashMap<String, String> data); -->
+	
+	<insert id="depositWithdrawReq" parameterType="hashmap">
+		INSERT INTO deposit(member_idx, deposit_type, deposit_method, deposit_info,deposit_price,deposit_state) 
+		VALUES(#{member_idx},#{deposit_type},'계좌',#{deposit_info},#{deposit_price},1);
+	</insert>
+	
+	<insert id="depositChargedrawReq" parameterType="hashmap">
+		INSERT INTO deposit(member_idx, deposit_type, deposit_method, deposit_info,deposit_price,deposit_state) 
+		VALUES(#{member_idx},#{deposit_type},'계좌',#{deposit_info},#{deposit_price},1);
+	</insert>
+	
+	<insert id="depositUse" parameterType="hashmap">
+		INSERT INTO deposit_use(member_idx,deposit_use_price,deposit_use_state) Values(#{member_idx},#{deposit_use_price},#{deposit_use_state})
+	</insert>
+</mapper>

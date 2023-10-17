@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+   
+	<mapper namespace="kr.co.book.notice.dao.NoticeDAO">
+	
+		<select id="totalnoticeCount" resultType="int">
+			SELECT COUNT(notice_idx) FROM notice
+			WHERE notice_blind = 0		
+		</select>
+		
+		<select id="noticeList" resultType="notice">
+			SELECT n.notice_idx, n.notice_title, m.member_nickname, n.notice_date, n.notice_hit FROM notice n
+			JOIN member m ON n.member_idx = m.member_idx
+			WHERE n.notice_blind = 0 
+			ORDER BY n.notice_idx DESC LIMIT 10 OFFSET #{param1}
+		</select>
+		
+		<update id="noticeuphit">
+			UPDATE notice SET notice_hit = notice_hit+1
+			WHERE notice_idx = #{param1}			
+		</update>
+		
+		<select id="noticedetail" resultType="notice">
+			SELECT n.notice_idx,n.notice_title, m.member_nickname, n.notice_hit, n.notice_content, n.notice_date FROM notice n
+			JOIN member m ON n.member_idx = m.member_idx
+			WHERE notice_idx = #{param1}			
+		</select>
+	 	
+	</mapper>

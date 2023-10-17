@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+   
+	<mapper namespace="kr.co.book.chat.dao.ChatDAO">
+	
+		<!-- 대화중인 대화 방 -->
+		<select id="message_list" parameterType="chat" resultType="chat">
+		<!-- 
+			SELECT c.chat_idx, c.code_idx, c.idx, GROUP_CONCAT(m.member_nickname SEPARATOR ', ') AS nicknames,
+			c.chat_sender, c.chat_chat, c.chat_date
+			FROM chat c
+			JOIN chat_room cr ON c.code_idx = cr.code_idx AND c.idx = cr.idx
+			JOIN member m ON cr.member_idx = m.member_idx
+			WHERE cr.member_idx = #{member_idx} AND cr.chat_room_state = 0
+			AND c.chat_idx IN (SELECT MAX(chat_idx) FROM chat WHERE chat_sender = #{member_idx})
+			ORDER BY c.chat_idx DESC
+		-->				
+			SELECT cr.code_idx, cr.idx, m.member_nickname, c.chat_chat, c.chat_date
+			FROM chat_room cr
+			JOIN (
+			  SELECT code_idx, idx, MAX(chat_idx) AS max_chat_idx
+			  FROM chat
+			  GROUP BY code_idx, idx
+			) mc ON cr.code_idx = mc.code_idx AND cr.idx = mc.idx
+			JOIN chat c ON mc.max_chat_idx = c.chat_idx
+			JOIN member m ON c.chat_sender = m.member_idx
+			WHERE cr.chat_room_state = 0 and cr.member_idx = #{member_idx}
+			ORDER BY c.chat_idx DESC
+		</select>		
+		
+		<!-- 교환 신청한 책 IDX -->
+		<select id="chgbookidx" resultType="string">
+			SELECT library_book FROM `change`
+			WHERE change_idx = #{param1}
+		</select>
+		
+		<!-- 교환 신청한 유저 IDX -->
+		<select id="chgapplyuser" resultType="string">	
+			SELECT member_idx FROM `change`
+			WHERE change_idx = #{param1}
+		</select>
+		
+		<!-- 대여 신청한 책 IDX -->
+		<select id="rentbookidx" resultType="string">
+			SELECT library_idx FROM rent
+			WHERE rent_idx = #{param1}
+		</select>
+		
+		<!-- 대여 신청한 유저 IDX -->
+		<select id="rentapplyuser" resultType="string">	
+			SELECT member_idx FROM rent
+			WHERE rent_idx = #{param1}
+		</select>
+		
+		<!-- 대화 내역 -->
+		<select id="room_content_list" parameterType="chat" resultType="chat">					
+		    SELECT c.chat_idx, c.code_idx, c.idx, c.chat_sender, m.member_nickname, c.chat_chat, c.chat_date 
+		    FROM chat c JOIN member m ON c.chat_sender = m.member_idx
+		    WHERE c.code_idx = #{code_idx} AND c.idx = #{idx} 
+		    ORDER BY c.chat_idx;		
+		</select>
+				
+		<!-- 대화방 참여자 IDX -->
+		<select id="chatuserIDX" resultType="hashmap">
+			SELECT member_idx FROM chat_room
+			WHERE code_idx = #{param1} AND idx = #{param2} AND chat_room_state = 0
+		</select>
+		
+		<!-- 전송 메세지 저장 -->
+		<insert id="messageSendInlist" >
+		    INSERT INTO chat(code_idx, idx, chat_sender, chat_chat,chat_date) 
+		    VALUES(#{param1},#{param2},#{param3},#{param4},now())
+		</insert>
+		
+		<!-- 전송 사진 저장 -->
+		<insert id="fileWrite">
+			INSERT INTO photo(code_idx, idx, member_idx, photo_oriname, photo_newname, photo_blind)
+			VALUES(#{param1},#{param2},#{param3},#{param4},#{param5},0);
+		</insert>
+		
+		<!-- 대화 방의 책 -->
+		<select id="message_librarydetail" resultType="hashmap">
+			SELECT library_title, library_cover, library_info, library_sharestate FROM library
+			WHERE library_idx = #{param1} AND library_blind = 0
+		</select>
+		
+		<!-- 대화 방의 모임 -->
+		<select id="club_detail" resultType="hashmap">
+			SELECT c.club_name,b.cover ,GROUP_CONCAT(m.member_nickname SEPARATOR ', ') AS nicknames 
+			FROM club c 
+			JOIN club_apply ca ON c.club_idx = ca.club_idx
+			JOIN member m ON ca.member_idx = m.member_idx
+			join book b on b.isbn = c.isbn
+			WHERE ca.club_appstate = 1 AND c.club_idx = #{idx};			
+		</select>
+		
+		<!-- 대화 방의 책 상태 -->
+		<select id="librarystate" resultType="object">
+			SELECT library_sharestate FROM library
+			WHERE library_idx = #{param1} AND library_blind = 0
+		</select>
+		
+		<!-- 다른사람과 교환 상태 -->
+		<select id="otherchangeck" resultType="int">
+			SELECT COUNT(change_idx) FROM `change`
+			WHERE change_idx = #{param1} AND change_state IN (1,2)
+		</select>
+		
+		<!-- 나랑 교환 상태 -->
+		<select id="changestate" resultType="object">
+			SELECT change_state FROM `change`
+			WHERE change_idx = #{param1} 
+		</select>
+		
+		<!-- 다른사람과 대여 상태 -->		
+		<select id="otherrentck" resultType="int">
+			SELECT COUNT(rent_idx) FROM rent
+			WHERE rent_idx = #{param1} AND rent_state IN (1,2,3)
+		</select>
+		
+		<!-- 나랑 대여 상태 -->
+		<select id="rentstate" resultType="object">
+			SELECT rent_state FROM rent
+			WHERE rent_idx = #{param1}
+		</select>
+		
+		<!-- 교환 예약 수락 -->
+		<update id="finalchangeok">
+			UPDATE `change` SET change_state = 2, mod_member_idx = #{param2}
+			WHERE change_idx = #{param1}
+		</update>
+		
+		<!-- 들고있는 보증금 들고오기 -->
+		<select id="userdeposit" resultType="int">
+      		SELECT COALESCE(SUM(deposit_use_price), 0) FROM deposit_use WHERE member_idx=#{param1}
+   		</select>
+   		
+		<!-- 예약 걸린 보증금 들고오기 -->
+   		<select id="rentdeposit" resultType="int">
+   			SELECT rent_deposit FROM rent
+   			WHERE rent_idx = #{param1}   		
+   		</select>
+   		
+		<!-- 대여 보증금 사용 -->
+   		<insert id="usedeposit">
+   			INSERT INTO deposit_use(member_idx, deposit_use_price,deposit_use_state,rent_idx)
+   			VALUES(#{param1}, #{param2},'사용', #{param3})
+   		</insert>
+   		
+   		<!-- 대여 예약 수락 -->
+		<update id="finalrentok">
+			UPDATE rent SET rent_state = 2, mod_member_idx = #{param2}
+			WHERE rent_idx = #{param1}
+		</update>
+		
+		<!-- 대여 책 상태 변경 -->
+		<update id="finalbookok">
+			UPDATE library SET library_sharestate = 1
+			WHERE library_idx = #{param1}
+		</update>
+		
+		<!-- 교환 예약 취소 -->
+   		<update id="changereservationno">
+			UPDATE `change` SET change_state = 0, mod_member_idx = #{param2}
+			WHERE change_idx = #{param1}
+		</update>
+		
+		<!-- 약속 거절 -->
+		<update id="rentreservationno">
+			UPDATE rent SET rent_state = 0, mod_member_idx = #{param2}
+			WHERE rent_idx = #{param1}
+		</update>
+		
+		<!-- 책 상태 되돌리기 -->
+		<update id="finalbookno">
+			UPDATE library SET library_sharestate = 0
+			WHERE library_idx = #{param1}
+		</update>
+		
+		<!-- 현재 교환상태 확인 -->
+		<select id="chkchgroomstate" resultType="int">
+			SELECT change_state FROM `change`
+			WHERE change_idx = #{param1} 
+		</select>
+		
+		<!-- 현재 대여상태 확인 -->
+		<select id="chkrentroomstate" resultType="int">
+			SELECT rent_state FROM rent
+			WHERE rent_idx = #{param1} 
+		</select>
+		
+		<!-- 대화방 나가기 -->
+		<update id="chatout">
+			UPDATE CHAT_ROOM SET CHAT_ROOM_STATE = 1, MOD_MEMBER_IDX = #{param3}, MOD_DATE = now()
+			WHERE CODE_IDX = #{param1} AND IDX = #{param2} AND MEMBER_IDX = #{param3} 	
+		</update> 
+		
+		<!-- 모임 생성시 모임 메세지방 생성 -->
+		<insert id="createchatroom">
+			INSERT INTO chat_room(code_idx,member_idx,idx,chat_room_state)
+			VALUES(4,#{param2},#{param1},0)
+		</insert>
+		
+		<!-- 모임 채팅방 생성 됐다는 메세지 -->
+		<insert id="createchat">
+			INSERT INTO chat(code_idx,idx,chat_sender,chat_chat)
+			VALUES(4,#{param1},#{param2},#{param3})
+		</insert>
+		
+		<!-- 모임 참여자 IDX -->
+		<select id="findclubmember" resultType="hashmap">
+			SELECT member_idx FROM club_apply	
+			WHERE club_idx = #{param1} AND club_appstate = 1
+		</select>
+		
+		<!-- 모임 참여자에게 메세지 전송 -->
+		<insert id="sendclubmembermessage">
+			INSERT INTO chat(code_idx, idx, chat_sender, chat_chat)
+			VALUES(4,#{param1},#{param2},#{param3})
+		</insert>
+		
+		<!-- 모임 채팅 모두 나가기 -->
+		<update id="clubchatDelete">
+			UPDATE chat_room SET chat_room_state = 1
+			WHERE code_idx = #{param1} AND idx = #{param2}
+		</update>
+		
+		<!-- 모임명 들고오기 -->
+		<select id="findclub_name">
+			SELECT club_name FROM club
+			WHERE club_idx = #{idx}
+		</select>
+		
+		<!-- 교환 책 제목 들고오기 -->
+		<select id="findchgbooktitle">
+			SELECT library_title FROM library
+			WHERE library_idx = #{param1}
+		</select>
+		
+		<!-- 교환 책 표지 들고오기 -->
+		<select id="findchgbookcover">
+			SELECT library_cover FROM library
+			WHERE library_idx = #{param1}
+		</select>
+		
+		<!-- 교환 책 주인 들고오기 -->
+		<select id="findbookuser">
+			SELECT member_idx FROM library
+			WHERE library_idx = #{param1}
+		</select>
+		
+		<!-- 책 리뷰 작성 체크 -->
+		<select id="bookreviewchk" resultType="int">
+			SELECT COUNT(review_idx) FROM review
+			WHERE review_type = 1 AND review_transaction_type = #{param1} AND review_transaction_idx = #{param2} AND sender_idx = #{param3}
+		</select>
+		
+		<!-- 유저 리뷰 작성 체크 -->
+		<select id="userreviewchk" resultType="int">
+			SELECT COUNT(review_idx) FROM review
+			WHERE review_type = 0 AND review_transaction_type = #{param1} AND review_transaction_idx = #{param2} AND sender_idx = #{param3}
+		</select>
+		
+				
+		 
+	</mapper>

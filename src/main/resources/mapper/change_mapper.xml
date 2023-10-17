@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+   
+	<mapper namespace="kr.co.book.transaction.dao.ChangeDAO">
+	   	   		    
+		<!-- 교환 신청 -->
+		<insert id="changeapply" parameterType="hashmap">
+			INSERT INTO `change`(member_idx,library_book,library_book2,change_applydate,change_date,change_state) 
+			VALUES(#{member_idx},#{library_book},#{library_book2},now(),#{change_date},0)
+		</insert>
+		
+		<!-- 교환 IDX -->
+		<select id="findchange_idx" parameterType="hashmap" resultType="String">		
+			SELECT max(change_idx)  FROM `change`
+			WHERE member_idx = #{member_idx} AND library_book = #{library_book} AND library_book2 = #{library_book2}			
+		</select>
+		
+		<!-- 대화방 만들기 -->
+		<insert id="createchatroom" parameterType="hashmap">
+			INSERT INTO chat_room(code_idx,member_idx,idx,chat_room_state) 
+			VALUES(#{code_idx},#{member_idx},#{idx},0)
+		</insert>
+		
+		<!-- 책에 대한 정보 들고오기 -->
+		<select id="findchbmidx" parameterType="hashmap" resultType="change">		
+			SELECT library_title, library_cover, library_info, member_idx FROM library WHERE library_idx = #{library_book} 
+		</select>
+		
+		<!-- 책에 대한 정보 들고오기2 -->
+		<select id="findchbmidx2" parameterType="hashmap" resultType="change">		
+			SELECT library_title, library_cover, library_info, member_idx FROM library WHERE library_idx = #{library_book2} 
+		</select>
+		
+		<!-- 신청내역 대화방에 뿌려주기-->
+		<insert id="applychatcontent">
+			INSERT INTO chat(code_idx,idx,chat_sender,chat_chat,chat_date)			
+			VALUES(#{code_idx},#{idx},#{member_idx}, CONCAT('          ','&lt;br/&gt;','&lt;img src=', #{library.library_cover}, ' width="50%" height="auto"&gt;', '&lt;br/&gt;',#{library.library_title},'&lt;br/&gt;','책을 제가 가지고 있는','&lt;br/&gt;','&lt;img src=', #{library2.library_cover}, ' width="50%" height="auto"&gt;','&lt;br/&gt;',#{library2.library_title}, '&lt;br/&gt;',' 책과 교환 어떠세요?'),now())
+			<!-- VALUES(#{code_idx},#{idx},#{member_idx}, CONCAT('          ','&lt;br/&gt;',#{library.library_title}, '&lt;br/&gt;', '&lt;img src=', #{library.library_cover}, ' width="50%" height="auto"&gt;',#{library2.library_title}, '&lt;br/&gt;', '&lt;img src=', #{library2.library_cover}, ' width="50%" height="auto"','&lt;br/&gt;','&lt;br/&gt;','서로 교환 어떠세요?'),now()) -->
+		</insert>
+		
+		<!-- 처음 교환 신청정보 -->
+		<select id="chgreservation" resultType="hashmap">
+			SELECT change_idx, library_book2, change_date FROM `change`
+			WHERE change_idx = #{param1}
+		</select>
+		
+		<!-- 교환 약속 잡기 -->
+		<update id="updatechange" parameterType="hashmap">
+			UPDATE `change` SET library_book2 = #{library_book2}, change_date = #{change_date}, 
+			change_state = 1, mod_member_idx = #{member_idx}, MOD_DATE = now()
+			WHERE change_idx = #{change_idx}
+		</update>
+		
+		<!-- 교환 약속정보 메세지 보내기 -->
+		<insert id="chatchangereservation" parameterType="hashmap">	 
+			INSERT INTO chat(code_idx, idx, chat_sender, chat_chat, chat_date)
+			VALUES(#{code_idx}, #{change_idx},#{idx},#{member_idx}, CONCAT('          ','&lt;br/&gt;','&lt;img src=', #{library.library_cover}, ' width="50%" height="auto"&gt;', '&lt;br/&gt;',#{library.library_title}, '&lt;br/&gt;', '책과 가지고 계신', '&lt;br/&gt;', '&lt;img src=', #{library2.library_cover}, ' width="50%" height="auto"&gt;', '&lt;br/&gt;',#{library2.library_title}, '&lt;br/&gt;',' 책과 교환 어떠세요?'),  now())	
+		</insert>
+		
+
+		
+		
+	  </mapper>

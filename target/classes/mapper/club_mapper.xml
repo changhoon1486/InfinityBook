@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.book.club.dao.ClubDAO">
+	
+	<select id="totalClubList" resultType="int">
+		SELECT COUNT(c.club_idx) FROM club c WHERE c.club_blind = 0
+		
+	</select>
+	
+	<select id="clubList" resultType="club">
+		SELECT c.club_idx ,c.member_idx,m.member_nickname,COUNT(ca.member_idx) meet_num ,c.isbn, b.title, b.cover ,c.club_name,c.club_meetdate,co.code_codename ,c.club_onoff,c.club_num,c.club_blind,c.club_state 
+		FROM club c 
+		JOIN `member` m ON c.member_idx=m.member_idx 
+		JOIN code co ON c.code_idx = co.code_idx 
+		JOIN book b ON c.isbn =b.isbn 
+		JOIN club_apply ca ON c.club_idx = ca.club_idx AND ca.club_appstate =1
+		WHERE c.club_blind = 0
+		GROUP BY c.club_idx
+		ORDER BY c.club_idx DESC LIMIT 5 OFFSET #{param1}
+	</select>
+	
+	<select id="totalClubListSearch" resultType="int">
+		SELECT COUNT(c.club_idx) FROM club c JOIN book b ON c.isbn =b.isbn
+		WHERE c.club_blind = 0 AND ((c.club_name LIKE CONCAT('%' #{param1} '%')) OR (b.title LIKE CONCAT('%' #{param1} '%')))
+		
+	</select>
+	
+	<select id="clubListSearch" resultType="club">
+		SELECT c.club_idx ,c.member_idx,m.member_nickname,COUNT(ca.member_idx) meet_num ,c.isbn, b.title, b.cover ,c.club_name,c.club_meetdate,co.code_codename ,c.club_onoff,c.club_num,c.club_blind,c.club_state 
+		FROM club c 
+		JOIN `member` m ON c.member_idx=m.member_idx 
+		JOIN code co ON c.code_idx = co.code_idx 
+		JOIN book b ON c.isbn =b.isbn 
+		JOIN club_apply ca ON c.club_idx = ca.club_idx AND ca.club_appstate =1
+		WHERE c.club_blind = 0 AND ((c.club_name LIKE CONCAT('%' #{param2} '%')) OR (b.title LIKE CONCAT('%' #{param2} '%')))
+		GROUP BY c.club_idx
+		ORDER BY c.club_idx DESC LIMIT 5 OFFSET #{param1}
+	</select>
+	
+	<select id="clubDetail" resultType="club">
+		SELECT c.club_idx ,c.member_idx,m.member_nickname,COUNT(ca.member_idx) meet_num ,c.isbn, b.title, b.cover ,c.club_name,c.club_content, c.club_meetdate,co.code_codename ,c.club_onoff,c.club_num,c.club_blind,c.club_state 
+		FROM club c 
+		JOIN `member` m ON c.member_idx=m.member_idx 
+		JOIN code co ON c.code_idx = co.code_idx 
+		JOIN book b ON c.isbn =b.isbn 
+		JOIN club_apply ca ON c.club_idx = ca.club_idx AND ca.club_appstate =1
+		WHERE c.club_blind = 0 AND c.club_idx = #{param1}
+	</select>
+	
+	<select id="clubMember" resultType="club">
+		SELECT m.member_nickname, m.member_idx  
+		FROM club_apply ca 
+		JOIN `member` m ON m.member_idx = ca.member_idx 
+		WHERE ca.club_idx =#{param1} AND ca.club_appstate=1
+		ORDER BY ca.club_appdate ASC
+	</select>
+	
+	<select id="applyMember" resultType="club">
+		SELECT m.member_nickname , m.member_idx
+		FROM club_apply ca 
+		JOIN `member` m ON m.member_idx = ca.member_idx 
+		WHERE ca.club_idx =#{param1} AND ca.club_appstate=0
+		ORDER BY ca.club_appdate ASC
+	</select>
+	
+	<select id="clubApplyChk" resultType="int">
+		SELECT COUNT(member_idx) FROM club_apply WHERE club_idx=#{param1} AND member_idx=#{param2}
+	</select>
+		
+	<insert id="clubApply">
+		INSERT INTO club_apply(club_idx,member_idx,club_appstate) VALUES(#{param1},#{param2},'0')
+	</insert>
+	
+	<update id="applyAccept">
+		UPDATE club_apply SET club_appstate='1' WHERE club_idx=#{param1} AND member_idx=#{param2} 
+	</update>
+	
+	<delete id="applyReject">
+		DELETE FROM club_apply WHERE club_idx=#{param1} AND member_idx=#{param2}
+	</delete>
+	
+	<select id="locationCode" resultType="club">
+		SELECT code_idx,code_codename FROM code WHERE code_upcode='region' AND (code_codename != '비대면')
+	</select>
+	
+	<insert useGeneratedKeys="true"
+		keyColumn="club_idx"
+		keyProperty="club_idx"
+		id="clubWrite" parameterType="club">
+		INSERT INTO club(member_idx, isbn, club_name, club_content,club_meetdate, code_idx, club_onoff, club_num, club_blind, club_state)
+		VALUES(#{member_idx}, #{isbn}, #{club_name}, #{club_content}, #{club_meetdate}, #{code_idx}, #{club_onoff}, #{club_num}, 0, 0)
+	</insert>	
+	
+	<insert id="clubJoin">
+		INSERT INTO club_apply(club_idx, member_idx, club_appdate, club_appstate) VALUES(#{param1}, #{param2}, current_timestamp(),1);
+	</insert>
+	
+	<update id="clubDelete">
+		UPDATE club SET club_blind='1' WHERE club_idx=#{param1}
+	</update>
+	
+	<update id="clubUpdate">
+		UPDATE club SET club_state='1' WHERE club_idx=#{param1}
+	</update>		
+	
+	 <select id="totalMyApplyList" resultType="int">
+	 	SELECT COUNT(ca.club_idx)  
+	 	FROM club_apply ca
+	 	JOIN club c ON c.club_idx = ca.club_idx AND c.club_blind = 0
+	 	WHERE ca.member_idx = #{param1} AND ca.club_appstate = 0
+
+	 </select>
+	 
+	 <select id="myApplyList" resultType="club">
+		SELECT c.club_idx, c.club_state, ca.club_appstate, b.cover, b.title, c.club_name, m.member_nickname, co.code_codename, c.club_meetdate  
+		FROM club_apply ca
+		JOIN `member` m ON ca.member_idx=m.member_idx 
+		JOIN club c ON c.club_idx = ca.club_idx AND c.club_blind = 0
+		JOIN code co ON c.code_idx = co.code_idx 
+		JOIN book b ON c.isbn =b.isbn
+		WHERE ca.member_idx = #{param1} AND ca.club_appstate = 0
+		ORDER BY ca.club_appdate DESC LIMIT 5 OFFSET #{param2}
+	 </select>
+	
+	
+	 <select id="totalMyClubList" resultType="int">
+	 	SELECT COUNT(ca.club_idx)  
+	 	FROM club_apply ca
+	 	JOIN club c ON c.club_idx = ca.club_idx AND c.club_blind = 0
+	 	WHERE ca.member_idx = #{param1} AND ca.club_appstate = 1
+	 	
+	 </select>
+	 
+	 <select id="myClubList" resultType="club">
+	 	SELECT c.club_idx ,c.member_idx,m.member_nickname,c.isbn, b.title, b.cover ,c.club_name,c.club_meetdate,co.code_codename ,c.club_onoff,c.club_num,c.club_blind,c.club_state 
+		FROM club c
+		JOIN `member` m ON c.member_idx=m.member_idx 
+		JOIN code co ON c.code_idx = co.code_idx 
+		JOIN book b ON c.isbn =b.isbn  
+		JOIN club_apply ca ON c.club_idx = ca.club_idx 
+		WHERE ca. member_idx = #{param1} AND ca.club_appstate = 1 AND club_blind = 0
+		ORDER BY ca.club_appdate DESC LIMIT 5 OFFSET #{param2}
+	 </select>
+
+	 <select id="totalAddMemberList" resultType="int">
+		SELECT COUNT(c.club_idx) FROM club c WHERE c.club_blind = 0 AND member_idx=#{param1}		
+	</select>
+	
+	<select id="addMemberList" resultType="club">
+		SELECT c.club_idx ,c.member_idx,m.member_nickname,COUNT(ca.member_idx) meet_num ,c.isbn, b.title, b.cover ,c.club_name,c.club_meetdate,co.code_codename ,c.club_onoff,c.club_num,c.club_blind,c.club_state 
+		FROM club c 
+		JOIN `member` m ON c.member_idx=m.member_idx 
+		JOIN code co ON c.code_idx = co.code_idx 
+		JOIN book b ON c.isbn =b.isbn 
+		JOIN club_apply ca ON c.club_idx = ca.club_idx AND ca.club_appstate =1
+		WHERE c.club_blind = 0 AND c.member_idx=#{param1}	
+		GROUP BY c.club_idx
+		ORDER BY c.club_idx DESC LIMIT 5 OFFSET #{param2}
+	</select>
+	 
+	 <select id="clubNum" resultType="int">
+	 	  SELECT club_num FROM club WHERE club_idx = #{param1}
+	 </select>
+	 
+	 <select id="meetNum" resultType="int">
+	 	 SELECT count(member_idx) FROM club_apply WHERE club_idx= #{param1} AND club_appstate =1; 
+	 </select>
+	
+	<select id="totalReplyList" resultType="int">
+		SELECT COUNT( r.reply_idx)
+		FROM reply r
+		JOIN `member` m ON r.member_idx = m.member_idx 
+		JOIN code c ON c.code_idx = r.code_idx AND r.code_idx =61
+		WHERE idx =#{param1} AND reply_blind = 0
+	</select> 
+	
+	<select id="clubReplyList" resultType="club">
+		SELECT r.reply_idx, c.code_code,m.member_idx ,m.member_nickname, r.reply_content, r.idx , r.reg_date 
+		FROM reply r
+		JOIN `member` m ON r.member_idx = m.member_idx 
+		JOIN code c ON c.code_idx = r.code_idx 
+		WHERE idx =#{param1} AND reply_blind = 0 AND r.code_idx =61
+		ORDER BY r.reply_idx ASC LIMIT 10 OFFSET #{param2}
+	</select>
+	
+	<!-- void clubReplyWrite(String member_idx, String reply_content, String club_idx);
+	 -->
+	<insert id="clubReplyWrite">
+		INSERT INTO reply(member_idx,code_idx,idx, reply_blind, reply_content)
+		VALUES(#{param1}, 61, #{param3}, 0, #{param2});
+	</insert> 
+	
+	<update id="clubReplyDelete">
+		UPDATE reply SET reply_blind='1' WHERE reply_idx=#{param1}
+	</update>
+	
+	<update id="clubReplyUpdate">
+		UPDATE reply SET reply_content=#{param2} WHERE reply_idx=#{param1}
+	</update>
+	
+	<!-- void clubReReply(String member_idx, String reply_idx, String reply_content, String club_idx); -->
+	
+	<insert id="clubReReply">
+		INSERT INTO reply(member_idx,code_idx,idx, reply_blind, reply_content)
+		VALUES(#{param1}, 62, #{param2}, 0, #{param3});
+	</insert> 
+
+	<select id="reReplyList" resultType="club">
+		SELECT r.reply_idx, c.code_code,m.member_idx ,m.member_nickname, r.reply_content, r.idx , r.reg_date 
+		FROM reply r
+		JOIN `member` m ON r.member_idx = m.member_idx 
+		JOIN code c ON c.code_idx = r.code_idx 
+		WHERE idx =#{param1} AND reply_blind = 0 AND r.code_idx =62
+	</select>
+	
+	<select id="nicknameList" resultType="club">
+		SELECT ca.member_idx, m.member_nickname 
+		FROM club_apply ca
+		JOIN `member` m ON m.member_idx = ca.member_idx 
+		WHERE ca.club_idx = #{param1}
+	</select>
+	
+	<select id="replyMember">
+		SELECT member_idx FROM reply r WHERE reply_idx = #{param1}
+	</select>
+	
+	<select id="clubTitle">
+		SELECT club_name  
+		FROM club 
+		WHERE club_idx = #{param1}
+	</select>
+	
+	<select id="clubWriter">
+		SELECT member_idx  
+		FROM club 
+		WHERE club_idx = #{param1}
+	</select>
+	
+	<!-- void reReplyAlarm(String member_idx, String idx, String content); -->
+	<insert id="reReplyAlarm">
+		INSERT INTO alarm(code_idx, idx, member_idx, alarm_content, alarm_check)
+		VALUES(75, #{param2}, #{param1}, #{param3}, 0);
+	</insert>
+	
+	<!--	void applyAlarm(String writer_idx, String club_idx, String content);  -->
+	<insert id="applyAlarm">
+		INSERT INTO alarm(code_idx, idx, member_idx, alarm_content, alarm_check)
+		VALUES(75, #{param2}, #{param1}, #{param3}, 0);
+	</insert>
+	
+	<!-- 닉네임 -->
+	<select id="findmembernickname" resultType="String">
+		SELECT member_nickname FROM member
+		WHERE member_idx = #{member_idx}
+	</select>
+</mapper>

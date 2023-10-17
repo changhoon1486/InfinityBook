@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.book.main.dao.MainDAO">
+
+	<select id="popularReport" resultType="main">
+		SELECT l.book_report_idx, SUM(l.like_state) AS likenum, b.title, b.author, m.member_nickname, br.book_report_date  ,br.book_report_title, b.cover  
+		FROM book_report br
+		JOIN `member` m ON m.member_idx = br.member_idx 
+		JOIN `like` l ON br.book_report_idx = l.book_report_idx 
+		JOIN book b ON b.isbn =br.isbn 
+		WHERE l.like_date > DATE_SUB(current_timestamp(), INTERVAL 1 MONTH)
+		GROUP BY l.book_report_idx
+		ORDER BY SUM(l.like_state) DESC
+		LIMIT 3
+	</select>
+	
+	<select id="popularLibrary" resultType="main">
+		SELECT count (r.rent_idx) AS cnt, l.library_isbn , l.library_title ,l.library_description ,l.library_idx ,l.library_cover, l.library_author  
+		FROM rent r 
+		JOIN library l ON r.library_idx = l.library_idx 
+		GROUP BY l.library_isbn
+		ORDER BY cnt DESC 
+		LIMIT 3;
+	</select>
+
+	
+</mapper>

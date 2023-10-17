@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.book.mypage.dao.CalenderDAO">
+
+	<select id="rentEvents" resultType="CalenderDTO">
+		SELECT 
+			(select l.library_title from library l where l.library_idx = r.library_idx) AS bookTitle,
+			(rent_startdate) AS start, 
+			DATE_ADD(rent_enddate, INTERVAL 1 DAY) AS end
+		FROM rent r
+			WHERE member_idx = #{param} AND rent_state IN (2,3,4)
+	</select>
+	
+	<select id="borrowEvents" resultType="CalenderDTO">
+		SELECT 
+			(SELECT l.library_title FROM library l WHERE l.library_idx = r.library_idx) AS bookTitle, 
+			(rent_startdate) AS start,  
+			DATE_ADD(rent_enddate, INTERVAL 1 DAY) AS end
+		FROM rent r 
+		INNER JOIN library l ON r.library_idx IN (SELECT l.library_idx FROM library WHERE library_blind = 0 AND l.member_idx = #{param})
+			WHERE rent_state IN (2,3,4);
+	</select>
+	
+	<select id="changeEvents" resultType="CalenderDTO">
+		SELECT DISTINCT
+			(c.change_date) AS start,
+			(select l.library_title from library l where l.library_idx = c.library_book2) AS bookTitle
+		FROM `change` c 
+		INNER JOIN library l
+			ON (c.member_idx = #{param} OR c.library_book in (SELECT l.library_idx FROM library WHERE member_idx = #{param}))
+			WHERE c.change_state IN (2,4)
+	</select>
+
+	<select id="clubEvents" resultType="CalenderDTO">
+		SELECT 
+			(club_name) AS title, 
+			(club_meetdate) AS start
+		FROM club c
+			LEFT JOIN club_apply a
+				ON c.club_idx = a.club_idx 
+					WHERE a.member_idx = #{param} AND a.club_appstate = '참여'
+	</select>
+
+
+
+
+</mapper>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.book.transaction.dao.TransactionListDAO">
+
+	<select id="searchUserChange" resultType="TransactionListDTO">
+		select m.member_nickname,c.code_codename,l.library_idx from library l inner join member m on l.member_idx = m.member_idx inner join code c on m.code_idx = c.code_code
+		where l.library_isbn = #{isbn} and (l.library_use = '교환' or l.library_use = '교환대여') and m.member_idx != #{member_idx} and c.code_upcode = "region";
+	</select>
+	
+	<select id="searchUserRent" resultType="TransactionListDTO">
+			select m.member_nickname,c.code_codename,l.library_idx from library l inner join member m on l.member_idx = m.member_idx inner join code c on m.code_idx = c.code_code
+		where l.library_isbn = #{isbn} and (l.library_use = '대여' or l.library_use = '교환대여') and m.member_idx != #{member_idx} and c.code_upcode = "region";</select>
+
+		<select id="searchDetail" resultType="TransactionListDTO">
+		SELECT * FROM library WHERE library_idx=#{library_idx}
+	</select>
+	
+			<select id="searchReview" resultType="TransactionListDTO">
+		select r.review_content,r.review_date,m.member_nickname  from review r inner join member m on m.member_idx = r.sender_idx where review_type = 1 and reciever_idx = #{library_idx}
+	</select>
+	
+	
+	<select id="changeMyBook" resultType="TransactionListDTO">
+		SELECT * FROM library WHERE member_idx =#{member_idx}
+	</select>
+	
+	<select id="deposit" resultType="String">
+		SELECT COALESCE(SUM(deposit_use_price), 0) FROM deposit_use WHERE member_idx=#{param1}
+	</select>
+	
+	<select id="getUserNickname" resultType="String">
+		select member_nickname from member where member_idx = #{member_idx}
+	</select>
+	
+	 <insert id="reviewWrite" parameterType="HashMap">
+		insert into review (sender_idx,review_type,reciever_idx,review_transaction_type,review_transaction_idx,review_content,review_date,review_blind)
+		values(#{member_sender},#{review_type},#{review_reciever},#{review_transaction_type},#{review_tracnsaction_idx},#{review_content},current_timestamp(),0)
+	</insert> 
+</mapper>

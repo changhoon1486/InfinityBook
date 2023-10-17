@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.book.mypage.dao.MyBookReportDAO">
+	 
+	 <select id="totalMyBookrport" resultType="int">
+	 	SELECT COUNT(br.book_report_idx)
+		FROM book_report br 
+		JOIN book b ON br.ISBN = b.ISBN
+		WHERE br.member_idx = #{param1} AND book_report_blind = 0
+		ORDER BY book_report_idx DESC
+	 </select>
+	 
+	 <select id="myBookreport" resultType="myBookReport">
+	 	SELECT br.book_report_idx , br.book_report_title ,b.title ,b.cover, b.author,br.book_report_open, br.book_report_date, COALESCE(SUM(l.like_state), 0) AS likes
+		FROM book_report br 
+		JOIN book b ON br.ISBN = b.ISBN
+		LEFT JOIN `like` l ON br.book_report_idx = l.book_report_idx
+		WHERE br.member_idx = #{param1} AND book_report_blind = 0
+		GROUP BY br.book_report_idx, br.book_report_title, b.title, b.cover, b.author, br.book_report_open, br.book_report_date
+		ORDER BY book_report_idx DESC LIMIT 9 OFFSET #{param2}
+	 </select>
+	 	 
+	 
+	 <select id="totalMyBookrportSearch" resultType="int" parameterType="hashmap">
+	 	SELECT COUNT(br.book_report_idx)
+		FROM book_report br 
+		JOIN book b ON br.ISBN = b.ISBN
+		WHERE br.member_idx = #{member_idx} AND book_report_blind = 0 AND ((title LIKE CONCAT('%' #{searchText} '%')) OR (book_report_title LIKE CONCAT('%' #{searchText} '%')))
+		ORDER BY book_report_idx DESC
+	 </select>
+	 
+	 <select id="myBookReportSearch" resultType="myBookReport" parameterType="hashmap">
+	 	SELECT br.book_report_idx , br.book_report_title ,b.title ,b.cover, b.author,br.book_report_open, br.book_report_date , COALESCE(SUM(l.like_state), 0) AS likes
+		FROM book_report br 
+		JOIN book b ON br.ISBN = b.ISBN
+		LEFT JOIN `like` l ON br.book_report_idx = l.book_report_idx
+		WHERE br.member_idx = #{member_idx} AND book_report_blind = 0 AND ((title LIKE CONCAT('%' #{searchText} '%')) OR (book_report_title LIKE CONCAT('%' #{searchText} '%')))
+		GROUP BY br.book_report_idx, br.book_report_title, b.title, b.cover, b.author, br.book_report_open, br.book_report_date
+		ORDER BY book_report_idx DESC LIMIT 9 OFFSET #{offset}
+	 </select>
+	
+	
+	 <select id="totalMyLike" resultType="int">
+		SELECT COUNT(*) AS count_result
+		FROM (
+		SELECT l.book_report_idx, SUM(l.like_state) AS likes, b.title, b.author, br.member_idx  
+		FROM `like` l
+		JOIN book_report br ON br.book_report_idx = l.book_report_idx 
+		JOIN book b ON b.isbn =br.isbn 
+		WHERE l.member_idx =1 AND br.book_report_open=1 AND br.book_report_blind = 0
+		GROUP BY l.book_report_idx
+		) AS subquery
+	 </select>
+	 
+	 
+	 <select id="myLike" resultType="myBookReport">
+		SELECT br.book_report_idx, br.book_report_title, b.title ,b.cover, b.author,br.book_report_open, br.book_report_date, SUM(l.like_state) AS likes  
+		FROM `like` l
+		JOIN book_report br ON br.book_report_idx = l.book_report_idx 
+		JOIN book b ON b.isbn =br.isbn 
+		WHERE l.member_idx =#{member_idx} AND br.book_report_open=1 AND br.book_report_blind = 0
+		GROUP BY l.book_report_idx
+		ORDER BY book_report_idx DESC LIMIT 9 OFFSET #{offset}
+	 </select>
+	 	 
+	 
+	 <select id="totalMyLikeSearch" resultType="int" parameterType="hashmap">
+	 	SELECT COUNT(*) AS count_result
+		FROM (
+			SELECT l.book_report_idx, SUM(l.like_state) AS likes, b.title, b.author, br.member_idx  
+			FROM `like` l
+			JOIN book_report br ON br.book_report_idx = l.book_report_idx 
+			JOIN book b ON b.isbn =br.isbn 
+			WHERE l.member_idx =1 AND br.book_report_open=0 AND br.book_report_blind = 0 AND ((b.title LIKE CONCAT('%' #{searchText} '%')) OR (br.book_report_title LIKE CONCAT('%' #{searchText} '%')))
+			GROUP BY l.book_report_idx
+		) AS subquery
+	 </select>
+	 
+	 <select id="myLikeSearch" resultType="myBookReport" parameterType="hashmap">
+	 	SELECT br.book_report_idx, br.book_report_title, b.title ,b.cover, b.author,br.book_report_open, br.book_report_date, SUM(l.like_state) AS likes  
+		FROM `like` l
+		JOIN book_report br ON br.book_report_idx = l.book_report_idx 
+		JOIN book b ON b.isbn =br.isbn 
+		WHERE l.member_idx =#{member_idx} AND br.book_report_open=0 AND br.book_report_blind = 0 AND ((b.title LIKE CONCAT('%' #{searchText} '%')) OR (br.book_report_title LIKE CONCAT('%' #{searchText} '%')))
+		GROUP BY l.book_report_idx
+		ORDER BY book_report_idx DESC LIMIT 9 OFFSET #{offset}
+	 </select>
+	 
+	 <update id="deleteMyBookreport">
+		UPDATE book_report SET book_report_blind=1 WHERE  book_report_idx = #{param1}
+	</update>
+	
+</mapper>

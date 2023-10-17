@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+   
+	<mapper namespace="kr.co.book.admin.dao.AdminInquiryDAO">			
+	
+		<select id="inquirydetail" resultType="inquiry">
+			SELECT i.inquiry_idx, i.member_idx, m.member_nickname, i.code_idx, i.inquiry_title, i.inquiry_content, i.inquiry_regdate, i.inquiry_state
+			FROM inquiry i
+			JOIN member m ON i.member_idx = m.member_idx
+			WHERE i.inquiry_idx = #{inquiry_idx} AND i.inquiry_blind = 0
+		</select>
+	
+		<insert id="inquiryreplywrite" parameterType="hashmap">
+			INSERT INTO inquiry(inquiry_upidx, member_idx, code_idx,inquiry_title, inquiry_content, inquiry_state, inquiry_blind)
+			VALUES(#{inquiry_idx},#{member_idx},#{code_idx},#{inquiry_title},#{inquiry_content},1,0)
+		</insert>
+				
+		<update id="inquirystateupdate">
+			UPDATE inquiry SET inquiry_state = 1 
+			WHERE inquiry_idx = #{inquiry_idx}
+		</update>
+		
+		<select id="totalinqCount" parameterType="hashmap" resultType="int">
+			SELECT COUNT(inquiry_idx) FROM inquiry 
+			WHERE	inquiry_blind = 0 AND inquiry_upidx = 0 AND inquiry_upidx = 0		
+		</select>
+		
+		<select id="inquiryList" resultType="inquiry">
+			SELECT i.inquiry_idx, i.inquiry_upidx, i.code_idx, i.inquiry_title, i.inquiry_regdate, i.inquiry_state, m.member_nickname
+			FROM inquiry i
+			JOIN member m ON i.member_idx = m.member_idx 
+			WHERE i.inquiry_blind = 0 AND i.inquiry_upidx = 0
+			ORDER BY i.inquiry_idx DESC LIMIT 10 OFFSET #{param1}
+		</select>
+		
+		<select id="totalinqokCount" resultType="int">
+			SELECT COUNT(inquiry_idx) FROM inquiry 
+			WHERE	inquiry_state = #{param1} AND inquiry_blind = 0 	AND inquiry_upidx = 0
+		</select>
+		
+		<select id="inquiryOkList" resultType="inquiry">
+			SELECT i.inquiry_idx, i.inquiry_upidx, i.code_idx, i.inquiry_title, i.inquiry_regdate, i.inquiry_state, m.member_nickname
+			FROM inquiry i
+			JOIN member m ON i.member_idx = m.member_idx 
+			WHERE i.inquiry_state = #{param2} AND i.inquiry_blind = 0 AND i.inquiry_upidx = 0
+			ORDER BY i.inquiry_idx DESC LIMIT 10 OFFSET #{param1}
+		</select>
+		
+		<select id="totalinqCountfilter" parameterType="hashmap" resultType="int">
+			SELECT COUNT(inquiry_idx) FROM inquiry 
+			WHERE	code_idx = #{param2} AND inquiry_blind = 0 AND inquiry_upidx = 0	
+		</select>
+		
+		<select id="inquiryListFilter" resultType="inquiry">
+			SELECT i.inquiry_idx, i.inquiry_upidx, i.code_idx, i.inquiry_title, i.inquiry_regdate, i.inquiry_state, m.member_nickname
+			FROM inquiry i
+			JOIN member m ON i.member_idx = m.member_idx 
+			WHERE i.code_idx = #{param2} AND i.inquiry_blind = 0 AND i.inquiry_upidx = 0
+			ORDER BY i.inquiry_idx DESC LIMIT 10 OFFSET #{param1}
+		</select>
+		
+		<select id="totalinqCountAll" parameterType="hashmap" resultType="int">
+			SELECT COUNT(inquiry_idx) FROM inquiry 
+			WHERE	inquiry_state = #{param1} AND code_idx = #{param2} AND inquiry_blind = 0 	AND inquiry_upidx = 0
+		</select>
+		
+		<select id="inquiryListAll" resultType="inquiry">
+			SELECT i.inquiry_idx, i.inquiry_upidx, i.code_idx, i.inquiry_title, i.inquiry_regdate, i.inquiry_state, m.member_nickname
+			FROM inquiry i
+			JOIN member m ON i.member_idx = m.member_idx 
+			WHERE i.inquiry_state = #{param2} AND i.code_idx = #{param3} AND i.inquiry_blind = 0 AND i.inquiry_upidx = 0
+			ORDER BY i.inquiry_idx DESC LIMIT 10 OFFSET #{param1}
+		</select>
+		<!-- *-************************************************************ -->
+		<select id="totalinqSearchCount" parameterType="hashmap" resultType="int">
+			SELECT COUNT(inquiry_idx) FROM inquiry i 
+			JOIN member m ON i.member_idx = m.member_idx
+			WHERE	i.inquiry_blind = 0 AND i.inquiry_upidx = 0 AND i.inquiry_upidx = 0 AND m.member_nickname LIKE CONCAT('%' #{param1} '%')		
+		</select>
+		
+		<select id="inquirySearchList" resultType="inquiry">
+			SELECT i.inquiry_idx, i.inquiry_upidx, i.code_idx, i.inquiry_title, i.inquiry_regdate, i.inquiry_state, m.member_nickname
+			FROM inquiry i
+			JOIN member m ON i.member_idx = m.member_idx 
+			WHERE i.inquiry_blind = 0 AND i.inquiry_upidx = 0 AND member_nickname LIKE CONCAT('%' #{param2} '%')
+			ORDER BY i.inquiry_idx DESC LIMIT 10 OFFSET #{param1}
+		</select>
+		
+		<select id="totalinqokSearchCount" resultType="int">
+			SELECT COUNT(i.inquiry_idx) FROM inquiry i
+			JOIN member m ON i.member_idx = m.member_idx
+			WHERE	i.inquiry_state = #{param1} AND i.inquiry_blind = 0 	AND i.inquiry_upidx = 0 AND m.member_nickname LIKE CONCAT('%' #{param2} '%')
+		</select>
+		
+		<select id="inquiryOkSearchList" resultType="inquiry">
+			SELECT i.inquiry_idx, i.inquiry_upidx, i.code_idx, i.inquiry_title, i.inquiry_regdate, i.inquiry_state, m.member_nickname
+			FROM inquiry i
+			JOIN member m ON i.member_idx = m.member_idx 
+			WHERE i.inquiry_state = #{param2} AND i.inquiry_blind = 0 AND i.inquiry_upidx = 0 AND member_nickname LIKE CONCAT('%' #{param3} '%')
+			ORDER BY i.inquiry_idx DESC LIMIT 10 OFFSET #{param1}
+		</select>
+		
+		<select id="totalinqSearchCountfilter" parameterType="hashmap" resultType="int">
+			SELECT COUNT(i.inquiry_idx) FROM inquiry i 
+			JOIN member m ON i.member_idx = m.member_idx
+			WHERE	i.code_idx = #{param1} AND i.inquiry_blind = 0 AND i.inquiry_upidx = 0	 AND m.member_nickname LIKE CONCAT('%' #{param2} '%')
+		</select>
+		
+		<select id="inquirySearchListFilter" resultType="inquiry">
+			SELECT i.inquiry_idx, i.inquiry_upidx, i.code_idx, i.inquiry_title, i.inquiry_regdate, i.inquiry_state, m.member_nickname
+			FROM inquiry i
+			JOIN member m ON i.member_idx = m.member_idx 
+			WHERE i.code_idx = #{param2} AND i.inquiry_blind = 0 AND i.inquiry_upidx = 0 AND member_nickname LIKE CONCAT('%' #{param3} '%')
+			ORDER BY i.inquiry_idx DESC LIMIT 10 OFFSET #{param1}
+		</select>
+		
+		<select id="totalinqSearchCountAll" parameterType="hashmap" resultType="int">
+			SELECT COUNT(i.inquiry_idx) FROM inquiry i 
+			JOIN member m ON i.member_idx = m.member_idx
+			WHERE	i.inquiry_state = #{param1} AND i.code_idx = #{param2} AND i.inquiry_blind = 0 AND i.inquiry_upidx = 0 AND m.member_nickname LIKE CONCAT('%' #{param3} '%')
+		</select>
+		
+		<select id="inquirySearchListAll" resultType="inquiry">
+			SELECT i.inquiry_idx, i.inquiry_upidx, i.code_idx, i.inquiry_title, i.inquiry_regdate, i.inquiry_state, m.member_nickname
+			FROM inquiry i
+			JOIN member m ON i.member_idx = m.member_idx 
+			WHERE i.inquiry_state = #{param2} AND i.code_idx = #{param3} AND i.inquiry_blind = 0 AND i.inquiry_upidx = 0 AND member_nickname LIKE CONCAT('%' #{param4} '%')
+			ORDER BY i.inquiry_idx DESC LIMIT 10 OFFSET #{param1}
+		</select>
+		
+		<insert id="inquiryalarm">
+			INSERT INTO alarm(code_idx,idx,member_idx,alarm_content,alarm_check)
+			VALUES(78,#{inquiry_idx},#{member_i},#{content},0)
+		</insert>
+		
+		
+		
+		
+		
+		
+		
+	
+	
+	</mapper>

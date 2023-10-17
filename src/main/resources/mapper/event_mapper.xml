@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.book.event.dao.EventDAO">
+   <insert id="eventWrite">
+   		INSERT INTO event(member_idx, event_title, event_content, event_startdate, event_enddate, event_cnt, event_hit, event_blind)
+   		VALUES(#{member_idx},#{event_title},#{event_content}, #{event_startdate},#{event_enddate},#{event_cnt},0,0)   		
+   </insert>
+     
+   <select id="event_No_Search" resultType="int">
+   		SELECT event_idx FROM event WHERE EVENT_idx = (SELECT MAX(EVENT_idx) FROM event)
+   </select>
+   
+   <insert id="event_FileSave">
+   		INSERT INTO photo(code_idx, idx, photo_oriname, photo_newname, member_idx, photo_blind)
+   		VALUES(#{param1},#{param2},#{param3},#{param4},#{param5},#{param6})
+   </insert>
+   
+   <select id="totalEventCount" resultType="int">
+			SELECT COUNT(event_idx) FROM event
+			WHERE event_blind = 0		
+	</select>
+	
+	<select id="eventList" resultType="event">
+			select e.event_idx , e.event_title , e.event_content , e.event_cnt , e.event_startdate,  e.event_enddate, e.event_hit, p.photo_newname  from event e
+			join photo p on e.event_idx = p.idx
+			where e.event_blind = 0 and p.code_idx = 85
+			order by e.event_idx desc limit 10 offset #{param1};
+	</select>
+		
+		
+</mapper>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.book.admin.dao.AdminCodeDAO">
+<!-- ArrayList<AdminCodeDTO> upCodeList(); -->
+	<select id="upCodeList" resultType="adminCode">
+		SELECT code_idx, code_upcode,code_code FROM code WHERE NOT code_upcode ='system' GROUP BY code_upcode
+	</select>
+	
+	<!-- ArrayList<AdminBookDTO> adminCodeList(String code_upcode); -->
+	<select id="adminCodeList" resultType="adminCode">
+		SELECT  code_idx,code_code, code_codename  FROM code WHERE code_upcode = #{param1}
+	</select>
+	
+	<select id="findUpcode">
+		SELECT code_upcode FROM code WHERE code_idx=#{param1}
+	</select>
+	
+	<!-- void upcodeUpdate(String oriUpcode, String code_upcode); -->
+	<update id="upcodeUpdate">
+		UPDATE code SET code_code=#{param2} WHERE code_code = #{param1}	
+	</update>
+	
+	<update id="codeUpdate">
+		UPDATE code SET code_upcode=#{param2} WHERE code_upcode = #{param1}	
+	</update>
+	
+	<update id="codenameUpdate">
+		UPDATE code SET code_codename=#{param2} WHERE code_idx = #{param1}
+	</update>
+	
+</mapper>

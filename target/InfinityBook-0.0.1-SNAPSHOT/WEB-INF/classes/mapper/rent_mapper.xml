@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+   
+	<mapper namespace="kr.co.book.transaction.dao.RentDAO">   	 
+	
+		<!-- 대여 신청 -->
+		<insert id="rentapply" parameterType="hashmap">
+			INSERT INTO rent(library_idx, member_idx, rent_deposit, rent_startdate, rent_enddate, rent_state)
+			VALUES(#{library_idx},#{member_idx},#{rent_deposit},#{rent_startdate},#{rent_enddate},0)
+		</insert>
+		
+		<!-- 대여 IDX -->
+		<select id="findrent_idx" parameterType="hashmap" resultType="String">		
+			SELECT max(rent_idx)  FROM rent
+			WHERE library_idx = #{library_idx} AND member_idx = #{member_idx}			
+		</select>
+		
+		<!-- 대화방 만들기 -->
+		<insert id="createchatroom" parameterType="hashmap">
+			INSERT INTO chat_room(code_idx,member_idx,idx,chat_room_state) 
+			VALUES(#{code_idx},#{member_idx},#{idx},0)
+		</insert>
+		
+		<!-- 대여신청 책에 대한 정보(회원 idx, 책이름) 들고오기 -->
+		<select id="findchbmidx" parameterType="hashmap" resultType="rent">		
+			SELECT library_title, library_cover, library_info, member_idx FROM library WHERE library_idx = #{library_idx} 
+		</select>	
+		
+		<!-- 신청내역 대화방에 뿌려주기-->
+		<insert id="applychatcontent" parameterType="hashmap">
+			INSERT INTO chat(code_idx,idx,chat_sender,chat_chat,chat_date)
+			VALUES(#{code_idx},#{idx},#{member_idx},CONCAT('          ','&lt;br/&gt;','&lt;img src=', #{library.library_cover}, ' width="50%" height="auto"&gt;','&lt;br/&gt;',#{library.library_title},'&lt;br/&gt;' ,'책을 빌리고 싶어요','&lt;br/&gt;','&lt;br/&gt;','보증금: ', #{rent_deposit}, '&lt;br/&gt;', '대여일: ', #{rent_startdate}, '&lt;br/&gt;', '반납일: ', #{rent_enddate}),now())
+		</insert>		
+		
+		<!-- 처음 대여 신청정보 -->
+		<select id="rentreservation" resultType="hashmap">
+			SELECT rent_idx, library_idx, rent_deposit, rent_startdate, rent_enddate FROM rent
+			WHERE rent_idx =#{param1}
+		</select>
+		
+		<!-- 대여 약속 잡기 -->
+		<update id="updaterent" parameterType="hashmap">
+			UPDATE rent SET rent_deposit = #{rent_deposit}, rent_startdate = #{rent_startdate}, 
+			rent_enddate =  #{rent_enddate}, rent_state = 1, mod_member_idx = #{mod_member_idx}, mod_date = now()
+			WHERE rent_idx = #{rent_idx}
+		</update>
+		
+		<!-- 대여 약속정보 메세지 보내기 -->
+		<insert id="chatrentreservation" parameterType="hashmap">		 
+		    INSERT INTO chat(code_idx, idx, chat_sender, chat_chat, chat_date)
+		    VALUES(#{code_idx}, #{rent_idx}, #{member_idx}, CONCAT('          ','&lt;br/&gt;','&lt;img src=', #{library.library_cover}, ' width="50%" height="auto"&gt;','&lt;br/&gt;',#{library.library_title},'&lt;br/&gt;','&lt;br/&gt;','보증금: ', #{rent_deposit}, '&lt;br/&gt;', '대여일: ', #{rent_startdate}, '&lt;br/&gt;', '반납일: ', #{rent_enddate},'&lt;br/&gt;','&lt;br/&gt;','정보로 대여 하실래요?'), now())	
+		</insert>
+		
+		<!-- 완료 시 -->
+		<update id="rentend" parameterType="hashmap">
+			UPDATE rent SET  rent_state = 3, mod_member_idx = #{member_idx}, mod_date = now()
+			WHERE rent_idx = #{room}
+		</update>
+		
+		<!-- 보증금 들고오기 -->
+		<select id="rentenddeposit" parameterType="hashmap" resultType="int">
+			SELECT rent_deposit FROM rent
+			WHERE rent_idx = #{room}
+		</select>
+		
+		<!-- 보증금 돌려주기 -->
+		<insert id="rentendreturn">
+			INSERT INTO deposit_use(member_idx, deposit_use_price, deposit_use_state,rent_idx)
+			VALUES(#{apply_user}, #{deposit}, '반환',#{room})
+		</insert>
+		
+		<update id="chglibrary">
+			UPDATE library SET library_sharestate = 0
+			WHERE library_idx = #{library_idx}
+		</update>
+		
+	
+	</mapper>

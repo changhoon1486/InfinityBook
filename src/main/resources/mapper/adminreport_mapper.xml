@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.book.admin.dao.AdminReportDAO">
+
+	<insert id="reportSend" parameterType="hashMap">
+		INSERT INTO report(code_idx,idx,member_idx,report_content,report_state,reg_member_idx,reg_screen) 
+			VALUES((SELECT c.code_idx FROM code c WHERE code_code = #{code_code}), #{idx}, #{member_idx}, #{content}, '접수', #{member_idx}, #{jsp})
+	</insert>
+	
+	<select id="reportList" resultType="hashmap">
+		SELECT 
+			r.report_idx,
+			r.code_idx,
+			r.idx,
+			r.member_idx, 
+			c.code_codeName AS reportType, 
+			(SELECT DATE_FORMAT(report_date, '%Y-%m-%d %H:%i')) AS report_date, 
+			m.member_nickname, 
+			report_content, 
+			report_state, 
+			(SELECT DATE_FORMAT(rc.report_handlingdate, '%Y-%m-%d %H:%i')) AS report_handlingdate
+		FROM report r 
+			LEFT JOIN reportrecord rc ON r.report_idx = rc.report_idx
+			LEFT JOIN code c ON r.code_idx  = c.code_idx
+			LEFT JOIN `member` m ON r.member_idx = m.member_idx			
+				<if test="!reportType.equals('default')">
+					WHERE r.code_idx = (SELECT code_idx FROM code WHERE code_code = #{reportType})
+				</if>	
+				GROUP BY r.report_idx			
+				ORDER BY report_state ASC, report_idx DESC
+				LIMIT 10 OFFSET #{offset}
+	</select>
+	
+	<select id="getReportInfor" resultType="hashMap">
+		SELECT 
+			r.report_idx, 
+			r.code_idx,
+			r.idx,
+			c.code_codeName AS reportType, 
+			(SELECT DATE_FORMAT(report_date, '%Y-%m-%d %H:%i')) AS report_date, 
+			r.member_idx AS reportMemberIdx,
+			m.member_nickname AS reportMemberNick, 
+			r.report_content,			
+				<if test="code_idx.equals('69')"><!-- 감상문 신고 -->
+					(SELECT m2.member_nickname FROM member m2 WHERE m2.member_idx = 
+						(SELECT b.member_idx FROM book_report b WHERE b.book_report_idx = r.idx)) AS targetMemberNick,   
+					(SELECT b.book_report_title FROM book_report b WHERE b.book_report_idx = r.idx) AS target   
+		       </if>
+		       <if test="code_idx.equals('70')"><!-- 모임 신고 -->
+		           (SELECT m2.member_idx FROM member m2 WHERE m2.member_idx = 
+						(SELECT cl.member_idx FROM club cl WHERE cl.club_idx = r.idx)) AS targetMemberIdx,
+		           (SELECT m2.member_nickname FROM member m2 WHERE m2.member_idx = 
+						(SELECT cl.member_idx FROM club cl WHERE cl.club_idx = r.idx)) AS targetMemberNick,
+					(SELECT cl.club_name FROM club cl WHERE cl.club_idx = r.idx) AS target
+		       </if>
+		       <if test="code_idx.equals('71')"><!-- 댓글 신고 -->
+	       			(SELECT rp.code_idx FROM reply rp WHERE rp.reply_idx = r.idx) AS postType,
+	       			(SELECT rp.idx FROM reply rp WHERE rp.reply_idx = r.idx) AS postIdx,		  
+	       			(SELECT rp.reply_content FROM reply rp WHERE rp.reply_idx = r.idx) AS target,		       		
+		          	(SELECT m2.member_idx FROM member m2 WHERE m2.member_idx = 
+						(SELECT rp.member_idx FROM reply rp WHERE rp.reply_idx = r.idx)) AS targetMemberIdx,		       		
+		          	(SELECT m2.member_nickname FROM member m2 WHERE m2.member_idx = 
+						(SELECT rp.member_idx FROM reply rp WHERE rp.reply_idx = r.idx)) AS targetMemberNick     
+		       </if>
+		       <if test="code_idx.equals('72')"><!-- 리뷰 신고 -->
+		       		(SELECT m2.member_idx FROM member m2 WHERE m2.member_idx = 
+						(SELECT rv.reciever_idx FROM review rv WHERE rv.review_idx = r.idx)) AS recieverIdx,
+					(SELECT rv.review_content FROM review rv WHERE rv.review_idx = r.idx) AS target,
+		           (SELECT m2.member_idx FROM member m2 WHERE m2.member_idx = 
+						(SELECT rv.sender_idx FROM review rv WHERE rv.review_idx = r.idx)) AS targetMemberIdx,     
+		           (SELECT m2.member_nickname FROM member m2 WHERE m2.member_idx = 
+						(SELECT rv.sender_idx FROM review rv WHERE rv.review_idx = r.idx)) AS targetMemberNick   
+		       </if>
+		       <if test="code_idx.equals('73')"><!-- 도서 신고 -->
+		       		(SELECT library_idx FROM library WHERE library_idx = r.idx) AS bookIdx,
+		       		(SELECT library_title FROM library WHERE library_idx = r.idx) AS target,
+		       		(SELECT library_info FROM library WHERE library_idx = r.idx) AS bookInfo,
+		           (SELECT m2.member_idx FROM member m2 WHERE m2.member_idx = 
+						(SELECT l.member_idx FROM library l WHERE l.library_idx = r.idx)) AS targetMemberIdx,
+		           (SELECT m2.member_nickname FROM member m2 WHERE m2.member_idx = 
+						(SELECT l.member_idx FROM library l WHERE l.library_idx = r.idx)) AS targetMemberNick   
+		       </if>			
+		FROM report r
+			LEFT JOIN code c ON r.code_idx  = c.code_idx
+			LEFT JOIN `member` m ON r.member_idx = m.member_idx	
+				WHERE report_idx = #{report_idx}
+	</select>
+	
+	<select id="reportRecordList" resultType="hashMap">
+		SELECT  
+			report_result, 
+			report_reason, 
+			m.member_nickname, 
+			(SELECT DATE_FORMAT(report_handlingdate, '%Y-%m-%d %H:%i')) AS report_handlingdate
+		FROM reportrecord r
+		JOIN member m ON r.reportrecord_member_idx = m.member_idx
+			WHERE report_idx = #{reportIdx}				
+				ORDER BY report_handlingdate DESC
+				LIMIT 5 OFFSET #{offset}
+	</select>
+	
+	<update id="blind" parameterType="hashmap">
+		UPDATE 
+			<if test="code_idx.equals('69')"><!-- 감상문 신고 -->
+				book_report    
+	       </if>
+	       <if test="code_idx.equals('70')"><!-- 모임 신고 -->
+	           club
+	       </if>
+	       <if test="code_idx.equals('71')"><!-- 댓글 신고 -->
+       			reply
+	       </if>
+	       <if test="code_idx.equals('72')"><!-- 리뷰 신고 -->
+	       		review
+	       </if>
+	       <if test="code_idx.equals('73')"><!-- 도서 신고 -->
+  	     		library
+    	   </if>		
+   	  SET 
+			<if test="code_idx.equals('69')"><!-- 감상문 신고 -->
+				book_report_blind = #{blind},
+	       </if>
+	       <if test="code_idx.equals('70')"><!-- 모임 신고 -->
+	           club_blind = #{blind},    
+	       </if>
+	       <if test="code_idx.equals('71')"><!-- 댓글 신고 -->
+       			reply_blind = #{blind},    
+	       </if>
+	       <if test="code_idx.equals('72')"><!-- 리뷰 신고 -->
+	       		review_blind = #{blind},    
+	       </if>
+	       <if test="code_idx.equals('73')"><!-- 도서 신고 -->
+  	     		library_blind = #{blind},    
+    	   </if>
+    	   
+    	   mod_member_idx = #{member_idx}, mod_date = NOW(), mod_screen = #{jsp}
+    	   
+   	   	<where>
+   	   		<if test="code_idx.equals('69')"><!-- 감상문 신고 -->
+				book_report_idx
+	       </if>
+	       <if test="code_idx.equals('70')"><!-- 모임 신고 -->
+	           club_idx
+	       </if>
+	       <if test="code_idx.equals('71')"><!-- 댓글 신고 -->
+       			reply_idx
+	       </if>
+	       <if test="code_idx.equals('72')"><!-- 리뷰 신고 -->
+	       		review_idx
+	       </if>
+	       <if test="code_idx.equals('73')"><!-- 도서 신고 -->
+  	     		library_idx
+    	   </if>
+    	    = #{idx}
+   	   	</where>
+	</update>
+	
+	<insert id="blindAlarm" parameterType="hashmap">
+		INSERT INTO alarm(code_idx, idx, member_idx, alarm_content, alarm_check, reg_member_idx, reg_screen) 
+			VALUES(#{code_idx},#{idx},#{targetMemberIdx},#{alarmContent},0,#{member_idx},#{jsp})
+	</insert>	
+	
+	<update id="updateMemberState" parameterType="hashMap">
+		UPDATE member SET member_state = #{memberState}, mod_member_idx = #{member_idx}, mod_date = NOW(), mod_screen = #{jsp}
+			WHERE member_idx = #{targetMemberIdx}
+	</update>
+	
+	<insert id="reportHandlingRecord" parameterType="hashMap">
+		INSERT INTO reportrecord(report_idx, reportrecord_member_idx, report_result, report_reason, reg_member_idx, reg_screen)
+			VALUES(#{reportIdx}, #{member_idx}, #{result}, #{reason}, #{member_idx}, #{jsp})
+	</insert>
+	
+	<update id="reportHandlingCompleted" parameterType="hashMap">
+		UPDATE report 
+			SET report_state = '처리완료', mod_member_idx = #{member_idx}, mod_date = NOW(), mod_screen = #{jsp}
+				WHERE  report_idx = #{reportIdx}
+	</update>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+</mapper>

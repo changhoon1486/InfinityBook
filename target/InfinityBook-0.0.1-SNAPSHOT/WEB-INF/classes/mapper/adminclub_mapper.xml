@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.book.admin.dao.AdminClubDAO">
+
+	 <select id="totalAdminClub" resultType="int">
+	 	SELECT COUNT(c.club_idx) FROM club c 
+	 </select>
+	 
+	 <select id="adminClubList" resultType="adminClub">
+	 	SELECT c.club_idx ,c.member_idx,m.member_nickname,COUNT(ca.member_idx) meet_num ,c.isbn, b.title, b.cover ,c.club_name,c.club_meetdate,co.code_codename ,c.club_onoff,c.club_num,c.club_blind,c.club_state 
+		FROM club c 
+		JOIN `member` m ON c.member_idx=m.member_idx 
+		JOIN code co ON c.code_idx = co.code_idx 
+		JOIN book b ON c.isbn =b.isbn 
+		JOIN club_apply ca ON c.club_idx = ca.club_idx AND ca.club_appstate =1
+		GROUP BY c.club_idx
+		ORDER BY c.club_idx DESC LIMIT 10 OFFSET #{param1}
+	 </select>
+	 	 
+	 
+	 <select id="totalAdminClubSearch" resultType="int" parameterType="hashmap">
+	 	SELECT COUNT(c.club_idx) FROM club c JOIN book b ON c.isbn =b.isbn
+		WHERE ((c.club_name LIKE CONCAT('%' #{searchText} '%')) OR (b.title LIKE CONCAT('%' #{searchText} '%')))
+	  </select>
+	  
+	 <select id="adminClubListSearch" resultType="adminClub" parameterType="hashmap">
+	 	SELECT library_idx, member_idx,library_title,library_info,library_blind 
+	 	FROM library
+	 	WHERE ((library_title LIKE CONCAT('%' #{searchText} '%')) OR (library_info LIKE CONCAT('%' #{searchText} '%')))
+	 	ORDER BY library_idx DESC LIMIT 10 OFFSET #{offset} 
+	 </select>
+	
+	<update id="clubBlind">
+		UPDATE club SET club_blind=#{param1} WHERE club_idx=#{param2}
+	</update>
+
+	
+	
+</mapper>

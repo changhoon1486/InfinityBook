@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.book.admin.dao.AdminMemberDAO">
+	
+	<!-- int totalAdminBook(String member_state, String searchType, String searchText);
+
+	ArrayList<AdminBookDTO> adminBookList(String member_state, String searchType, String searchText, int offset); -->
+	
+	<select id="totalAdminBook" resultType="int">
+		SELECT COUNT(member_idx) FROM `member` m 
+		<where>
+			<if test="!param1.equals('default') and param2.equals('default') and param3.equals('default')">
+				member_state=#{param1}
+			</if>
+			<if test="param1.equals('default') and !param2.equals('default') and !param3.equals('default')">
+				${param2} LIKE CONCAT('%' #{param3} '%')
+			</if>
+			<if test="!param1.equals('default') and !param2.equals('default') and param3.equals('default')">
+				member_state=#{param1}
+			</if>
+			<if test="!param1.equals('default') and !param2.equals('default') and !param3.equals('default')">
+				member_state=#{param1} AND (${param2} LIKE CONCAT('%' #{param3} '%'))
+			</if>
+			
+		</where>
+	</select>
+	
+	<select id="adminBookList" resultType="adminMember">
+		SELECT member_idx, member_email,member_nickname ,member_state ,member_grade  FROM `member` m 
+			<where>
+				<if test="!param1.equals('default') and param2.equals('default') and param3.equals('default')">
+					member_state=#{param1}
+				</if>
+				<if test="param1.equals('default') and !param2.equals('default') and !param3.equals('default')">
+					${param2} LIKE CONCAT('%' #{param3} '%')
+				</if>
+				<if test="!param1.equals('default') and !param2.equals('default') and param3.equals('default')">
+					member_state=#{param1}
+				</if>
+				<if test="!param1.equals('default') and !param2.equals('default') and !param3.equals('default')">
+					member_state=#{param1} AND (${param2} LIKE CONCAT('%' #{param3} '%'))
+				</if>
+			
+		</where>
+	</select>
+	
+	<update id="grade">
+		UPDATE member SET member_grade=#{param1} WHERE member_idx=#{param2}
+	</update>
+	 
+	 <select id="getEmail">
+	 	select member_email from member where member_idx=#{param1}
+	 </select>
+	 
+	 <update id="resetNickname">
+		UPDATE member SET member_nickname=#{param2} WHERE member_idx=#{param1}
+	</update>
+</mapper>

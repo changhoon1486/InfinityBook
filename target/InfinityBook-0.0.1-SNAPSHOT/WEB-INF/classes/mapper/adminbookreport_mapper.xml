@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.book.admin.dao.AdminBookReportDAO">
+
+	 <select id="totalAdminBookReport" resultType="int">
+	 	SELECT COUNT(br.book_report_idx) FROM book_report br 
+	 </select>
+	 
+	 <select id="adminBookReportList" resultType="adminBookReport">
+	 	SELECT br.book_report_idx, br.member_idx, m.member_email, b.title, b.cover, b.author, br.isbn, br.book_report_title, br.book_report_content, br.book_report_date, br.book_report_hit, br.book_report_blind, br.book_report_open
+		FROM book_report br 
+		JOIN `member` m ON m.member_idx =br.member_idx 
+		JOIN book b ON b.isbn=br.isbn 
+		ORDER BY br.book_report_idx DESC LIMIT 10 OFFSET #{param1}
+	 </select>
+	 	 
+	 
+	 <select id="totalAdminBookReportSearch" resultType="int" parameterType="hashmap">
+	 	SELECT COUNT(br.book_report_idx)
+	 	FROM book_report br 
+		JOIN `member` m ON m.member_idx =br.member_idx 
+		JOIN book b ON b.isbn=br.isbn 
+		WHERE ((br.book_report_title LIKE CONCAT('%' #{searchText} '%')) OR (b.title LIKE CONCAT('%' #{searchText} '%')))
+	  </select>
+	  
+	 <select id="adminBookReportListSearch" resultType="adminBookReport" parameterType="hashmap">
+	 	SELECT br.book_report_idx, br.member_idx,m.member_email,  b.title, b.author, br.isbn,b.cover,br.book_report_title, br.book_report_content, br.book_report_date, br.book_report_hit, br.book_report_blind, br.book_report_open
+		FROM book_report br 
+		JOIN `member` m ON m.member_idx =br.member_idx 
+		JOIN book b ON b.isbn=br.isbn 
+		WHERE ((br.book_report_title LIKE CONCAT('%' #{searchText} '%')) OR (b.title LIKE CONCAT('%' #{searchText} '%')))
+		ORDER BY br.book_report_idx DESC LIMIT 10 OFFSET #{param1}
+	 </select>
+	
+ 	<update id="bookReportBlind">
+		UPDATE book_report SET book_report_blind =#{param1} WHERE book_report_idx=#{param2}
+	</update> 
+
+	
+	
+</mapper>

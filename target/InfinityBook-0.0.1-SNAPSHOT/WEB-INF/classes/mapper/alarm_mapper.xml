@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+   
+	<mapper namespace="kr.co.book.alarm.dao.AlarmDAO">
+	
+		<select id="alarmList" resultType="alarm">
+			SELECT alarm_idx, code_idx, idx, alarm_content, alarm_check, alarm_date FROM alarm
+			WHERE member_idx = #{member_idx} AND alarm_blind = 0
+			ORDER BY alarm_idx DESC
+		</select>
+		
+		<update id="alarmCheck">
+			UPDATE alarm SET alarm_Check = true, alarm_checkdate = now()
+			WHERE member_idx = #{member_idx}
+		</update>
+		
+		<select id="alarmchk" resultType="int">
+			SELECT COUNT(alarm_idx) from alarm 
+			WHERE member_idx = #{member_idx} AND alarm_check = 0
+		</select>
+		
+		<update id="alarmdel_all">
+			UPDATE alarm SET alarm_blind = 1
+			where member_idx = #{member_idx}
+		</update>
+		
+		<update id="alarmdel">
+			UPDATE alarm SET alarm_blind = 1
+			where alarm_idx = #{alarm_idx}
+		</update>
+		
+		
+	 	
+	</mapper>

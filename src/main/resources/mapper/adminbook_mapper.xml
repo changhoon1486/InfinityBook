@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.book.admin.dao.AdminBookDAO">
+
+	 <select id="totalAdminBook" resultType="int">
+	 	SELECT COUNT(library_idx) FROM library
+	 </select>
+	 
+	 <select id="adminBookList" resultType="adminBook">
+	 	SELECT library_idx, member_idx,library_title,library_info,library_blind 
+	 	FROM library
+	 	ORDER BY library_idx DESC LIMIT 10 OFFSET #{offset} 
+	 </select>
+	 	 
+	 
+	 <select id="totalAdminBookSearch" resultType="int" parameterType="hashmap">
+	 	SELECT COUNT(library_idx) FROM library
+	 	WHERE ((library_title LIKE CONCAT('%' #{searchText} '%')) OR (library_info LIKE CONCAT('%' #{searchText} '%')))
+	  </select>
+	  
+	 <select id="adminBookListSearch" resultType="adminBook" parameterType="hashmap">
+	 	SELECT library_idx, member_idx,library_title,library_info,library_blind 
+	 	FROM library
+	 	WHERE ((library_title LIKE CONCAT('%' #{searchText} '%')) OR (library_info LIKE CONCAT('%' #{searchText} '%')))
+	 	ORDER BY library_idx DESC LIMIT 10 OFFSET #{offset} 
+	 </select>
+	
+	<update id="bookBlind">
+		UPDATE library SET library_blind=#{param1} WHERE library_idx=#{param2}
+	</update>	
+	
+	<update id="resetBookInfo">
+		UPDATE library SET library_info='책 설명을 입력해주세요.' WHERE library_idx=#{param1}
+	</update>	
+	
+	
+</mapper>

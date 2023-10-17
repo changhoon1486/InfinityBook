@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+   
+	<mapper namespace="kr.co.book.mypage.dao.MyInquiryDAO">			
+	
+		<insert id="inquirywrite" parameterType="hashmap">
+			INSERT INTO inquiry(inquiry_upidx, member_idx, code_idx,inquiry_title, inquiry_content, inquiry_state, inquiry_blind)
+			VALUES(0,#{member_idx},#{code_idx},#{inquiry_title},#{inquiry_content},0,0)
+		</insert>
+		
+		<select id="myinquirydetail" resultType="myinquiry">
+			SELECT i.inquiry_idx, m.member_nickname, i.code_idx, i.inquiry_title, i.inquiry_content, i.inquiry_regdate, i.inquiry_state
+			FROM inquiry i
+			JOIN member m ON i.member_idx = m.member_idx
+			WHERE i.inquiry_idx = #{inquiry_idx} AND i.inquiry_blind = 0 AND i.inquiry_upidx = 0
+		</select>	
+		
+		<select id="totalmyinqCount" parameterType="hashmap" resultType="int">
+			SELECT COUNT(inquiry_idx) FROM inquiry 
+			WHERE	member_idx = #{param1} AND inquiry_blind = 0 AND inquiry_upidx = 0	
+		</select>
+		
+		<select id="totalmyinqokCount" parameterType="hashmap" resultType="int">
+			SELECT COUNT(inquiry_idx) FROM inquiry 
+			WHERE	member_idx = #{param1} AND inquiry_state = #{param2} AND inquiry_blind = 0 AND inquiry_upidx = 0 	
+		</select>
+		
+		<select id="totalmyinqCountfilter" parameterType="hashmap" resultType="int">
+			SELECT COUNT(inquiry_idx) FROM inquiry 
+			WHERE	member_idx = #{param1} AND code_idx = #{param2} AND inquiry_blind = 0 	AND inquiry_upidx = 0
+		</select>
+		
+		<select id="totalmyinqCountAll" parameterType="hashmap" resultType="int">
+			SELECT COUNT(inquiry_idx) FROM inquiry 
+			WHERE	member_idx = #{param1} AND inquiry_state = #{param2} AND code_idx = #{param3} AND inquiry_blind = 0 AND inquiry_upidx = 0 	
+		</select>
+		
+		<select id="myinquiryList" resultType="myinquiry">
+			SELECT i.inquiry_idx, i.inquiry_upidx, i.code_idx, i.inquiry_title, i.inquiry_regdate, i.inquiry_state, m.member_nickname
+			FROM inquiry i
+			JOIN member m ON i.member_idx = m.member_idx 
+			WHERE i.member_idx = #{param2} AND i.inquiry_blind = 0 AND i.inquiry_upidx = 0
+			ORDER BY i.inquiry_idx DESC LIMIT 10 OFFSET #{param1}
+		</select>
+		
+		<select id="myinquiryOkList" resultType="myinquiry">
+			SELECT i.inquiry_idx, i.inquiry_upidx, i.code_idx, i.inquiry_title, i.inquiry_regdate, i.inquiry_state, m.member_nickname
+			FROM inquiry i
+			JOIN member m ON i.member_idx = m.member_idx 
+			WHERE i.member_idx = #{param2} AND i.inquiry_state = #{param3} AND i.inquiry_blind = 0 AND i.inquiry_upidx = 0
+			ORDER BY i.inquiry_idx DESC LIMIT 10 OFFSET #{param1}
+		</select>
+		
+		<select id="myinquiryListFilter" resultType="myinquiry">
+			SELECT i.inquiry_idx, i.inquiry_upidx, i.code_idx, i.inquiry_title, i.inquiry_regdate, i.inquiry_state, m.member_nickname
+			FROM inquiry i
+			JOIN member m ON i.member_idx = m.member_idx 
+			WHERE i.member_idx = #{param2} AND i.code_idx = #{param3} AND i.inquiry_blind = 0 AND i.inquiry_upidx = 0 
+			ORDER BY i.inquiry_idx DESC LIMIT 10 OFFSET #{param1}
+		</select>
+		
+		<select id="myinquiryListAll" resultType="myinquiry">
+			SELECT i.inquiry_idx, i.inquiry_upidx, i.code_idx, i.inquiry_title, i.inquiry_regdate, i.inquiry_state, m.member_nickname
+			FROM inquiry i
+			JOIN member m ON i.member_idx = m.member_idx 
+			WHERE i.member_idx = #{param2} AND i.inquiry_state = #{param3} AND i.code_idx = #{param4} AND i.inquiry_blind = 0 AND i.inquiry_upidx = 0
+			ORDER BY i.inquiry_idx DESC LIMIT 10 OFFSET #{param1}
+		</select>
+		
+		<select id="myinquiryreplylist" resultType="myinquiry">
+			SELECT i.inquiry_idx, i.inquiry_title, m.member_nickname, i.inquiry_regdate
+			FROM inquiry i 
+			JOIN member m ON i.member_idx = m.member_idx 
+			WHERE i.inquiry_upidx = #{param1} 
+		</select>
+						
+		<select id="myinquiryreplydetail" resultType="myinquiry">
+			SELECT i.inquiry_idx, m.member_nickname, i.code_idx, i.inquiry_title, i.inquiry_content, i.inquiry_regdate, i.inquiry_state
+			FROM inquiry i
+			JOIN member m ON i.member_idx = m.member_idx
+			WHERE i.inquiry_idx = #{inquiry_idx} AND i.inquiry_blind = 0
+		</select>	
+	
+	</mapper>
